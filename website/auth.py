@@ -60,6 +60,8 @@ def sign_up():
             flash("Make sure your password has a number in it")
         elif re.search('[A-Z]',password1) is None: 
             flash("Make sure your password has a capital letter in it")
+        elif re.search('[^a-zA-Z0-9]',password1) is None: 
+            flash("Make sure your password has a special character in it")
         else:
             new_user = User(email=email, first_name=first_name, password=generate_password_hash(
                 password1, method='sha256'))
