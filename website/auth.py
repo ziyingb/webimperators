@@ -43,9 +43,7 @@ def sign_up():
         first_name = request.form.get('firstName')
         password1 = request.form.get('password1')
         password2 = request.form.get('password2')
-        pattern = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!#%*?&]{8,18}$"
-        matchpattern = re.compile(pattern)
-        searchpattern = re.search(matchpattern, password1)
+        
 
         user = User.query.filter_by(email=email).first()
         if user:
@@ -56,8 +54,12 @@ def sign_up():
             flash('First name must be greater than 1 character.', category='error')
         elif password1 != password2:
             flash('Passwords don\'t match.', category='error')
-        elif searchpattern:
+        elif len(password1) < 8:
             flash('Password must be at least 8 characters.', category='error')
+        elif re.search('[0-9]',password1) is None:
+            flash("Make sure your password has a number in it")
+        elif re.search('[A-Z]',password1) is None: 
+            flash("Make sure your password has a capital letter in it")
         else:
             new_user = User(email=email, first_name=first_name, password=generate_password_hash(
                 password1, method='sha256'))
