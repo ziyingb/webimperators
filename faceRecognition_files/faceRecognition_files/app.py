@@ -1,4 +1,5 @@
-from flask import Flask, render_template, request, redirect, url_for, Response
+from sre_constants import SUCCESS
+from flask import Flask, render_template, request, redirect, url_for, Response, flash
 import mysql.connector
 import cv2
 from PIL import Image
@@ -40,7 +41,7 @@ def generate_dataset(nbr):
     lastid = row[0]
  
     img_id = lastid
-    max_imgid = img_id + 10
+    max_imgid = img_id + 50
     count_img = 0
  
     while True:
@@ -105,7 +106,7 @@ def face_recognition():  # generate frame by frame from camera
         for (x, y, w, h) in features:
             cv2.rectangle(img, (x, y), (x + w, y + h), color, 2)
             id, pred = clf.predict(gray_image[y:y + h, x:x + w])
-            confidence = int(100 * (1 - pred / 300))
+            draw_boundary.confidence = int(100 * (1 - pred / 300))
             
             mycursor.execute("select b.prs_name "
                              "  from img_dataset a "
@@ -114,12 +115,13 @@ def face_recognition():  # generate frame by frame from camera
             s = mycursor.fetchone()
             s = '' + ''.join(s)
             
-            if confidence > 70 :
+            if draw_boundary.confidence > 70 :
                 cv2.putText(img, s, (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.8, color, 1, cv2.LINE_AA)
 
             else:
                 cv2.putText(img, "UNKNOWN", (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 1, cv2.LINE_AA)
-            print(confidence)
+
+            #print(confidence)
             
             coords = [x, y, w, h]
         return coords
@@ -133,7 +135,7 @@ def face_recognition():  # generate frame by frame from camera
     clf = cv2.face.LBPHFaceRecognizer_create()
     clf.read("classifier.xml")
     wCam, hCam = 500, 400
-    sampleNum = 0
+    #sampleNum = 0
     cap = cv2.VideoCapture(0)
     cap.set(3, wCam)
     cap.set(4, hCam)
@@ -144,14 +146,54 @@ def face_recognition():  # generate frame by frame from camera
         img = recognize(img, clf, faceCascade)
 
         #print(img)
-        sampleNum +=1
+        #sampleNum +=1
         frame = cv2.imencode('.jpg', img)[1].tobytes()
         yield (b'--frame\r\n'b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
- 
-        key = cv2.waitKey(1)
-        if key == 27 or sampleNum == 50:        
-            break
         
+        if draw_boundary.confidence > 70 :
+        
+            layout = [[sg.Text("Access Granted")], [sg.Button("OK")]]
+
+            #Create the window
+            window = sg.Window("Login", layout)
+
+            #Create an event loop
+            while True:
+                event, values = window.read()
+                # End program if user closes window or
+                # presses the OK button
+                if event == "OK" or event == sg.WIN_CLOSED:
+                    break
+            window.close()
+            cap.release()
+            render_template("welcome.html")
+        else:
+            
+            layout = [[sg.Text("Access Denied")], [sg.Button("OK")]]
+
+            # Create the window
+            window = sg.Window("Login", layout)
+
+            # Create an event loop
+            while True:
+                event, values = window.read()
+                # End program if user closes window or
+                # presses the OK button
+                if event == "OK" or event == sg.WIN_CLOSED:
+                    break
+
+            window.close()
+            cap.release()
+            
+            render_template("loginFailed.html")
+            
+        key = cv2.waitKey(1)
+        if key == 27:       
+            break
+        break
+    cap.release()
+    cv2.destroyAllWindows()
+            
  
 @app.route('/')
 def home():
@@ -204,9 +246,9 @@ def fr_page():
 def welcome():
     return render_template('welcome.html')
 
-@app.route('/unsuccessful')
-def unsuccessful():
-    return render_template('unsuccessful')
+@app.route('/loginFailed')
+def loginFailed():
+    return render_template('loginFailed.html')
  
 if __name__ == "__main__":
     app.run(host='127.0.0.1', port=5000, debug=True)
