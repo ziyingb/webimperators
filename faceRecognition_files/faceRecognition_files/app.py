@@ -12,7 +12,7 @@ app = Flask(__name__)
 mydb = mysql.connector.connect(
     host="localhost",
     user="root",
-    passwd="X7ue6MPD@1",
+    passwd=" ",
     database="flask_db"
 )
 mycursor = mydb.cursor()
