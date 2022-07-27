@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% include "head.html" %}
+</head>
+<body>
+
+{% include "navbar.html" %}
+
+<h1> Attention: Login unsuccessfully </h1>
+<p> Please check again</p>
+<div class="row">
+    <div class="col-md-7 offset-lg-2">
+        <a class="btn btn-danger btn-lg" href="{{ url_for('home') }}"> Back </a>
+    </div>
+</div>
