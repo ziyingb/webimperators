@@ -202,7 +202,7 @@ def face_recognition():  # generate frame by frame from camera
  
 @app.route('/')
 def home():
-    mycursor.execute("select prs_nbr, prs_name, prs_skill, prs_active, prs_added from prs_mstr")
+    mycursor.execute("select prs_nbr, prs_name, prs_active, prs_added from prs_mstr")
     data = mycursor.fetchall()
  
     return render_template('index.html', data=data)
@@ -265,8 +265,8 @@ def addprsn_submit():
     prsname = request.form.get('txtname')
     prsskill = request.form.get('optskill')
  
-    mycursor.execute("""INSERT INTO `prs_mstr` (`prs_nbr`, `prs_name`, `prs_skill`) VALUES
-                    ('{}', '{}', '{}')""".format(prsnbr, prsname, prsskill))
+    mycursor.execute("""INSERT INTO `prs_mstr` (`prs_nbr`, `prs_name`) VALUES
+                    ('{}', '{}')""".format(prsnbr, prsname))
     mydb.commit()
  
     # return redirect(url_for('home'))
