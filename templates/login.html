@@ -8,15 +8,15 @@
 <body>
 
   {% include "navbar.html" %}
-  &nbsp
+  &nbsp;
   <div class="row d-flex justify-content-center align-items-center h-100">
     <div class="col-md-8 col-lg-6 col-xl-4 offset-xl-1">
       <form action="{{ url_for('login') }}" method="POST">
         <h3 align="center">Login </h3>
 
         <div class="form-group">
-          <label for="email" class="form-label">Email Address</label>
-          <input type="email" class="form-control" id="email" name="email" placeholder="Enter email" required />
+          <label for="username" class="form-label">Username</label>
+          <input type="text" class="form-control" id="username" name="username" placeholder="Enter username" required />
         </div>
 
         <div class="form-group">
@@ -24,12 +24,7 @@
           <input type="password" class="form-control" id="password" name="password" placeholder="Enter password"
             required />
         </div>
-
-        <!-- <div>
-          <button type="submit" class="btn btn-primary">Open Camera</button>
-        </div> -->
         <br />
-        <!-- <button type="submit" class="btn btn-primary">Login</button> -->
         <input button type="submit" class="btn btn-primary" value="Login">
       </form>
     </div>
