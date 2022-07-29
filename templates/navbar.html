@@ -8,14 +8,20 @@
     <span class="navbar-toggler-icon"></span>
   </button>
   <div class="collapse navbar-collapse" id="navbar">
-    <div class="navbar-nav">
+    <div class="navbar-nav text-right">
       <div class="logo-image">
-        
         <img src="/static/img/logo.png" class="img-fluid">
       </div>
+      {% if session.username %}
+      <li class="nav-item">
+        <a class="nav-link" href="/home">Welcome : {{session.username}}</a>
+      </li>
+      <a class="nav-item nav-link" id="logout" href="/logout">Logout</a>
+      {% else %}
       <a class="nav-link" id="index" href="/">WEB IMPERATORS</a>
       <a class="nav-item nav-link" id="login" href="/login">Login</a>
       <a class="nav-item nav-link" id="signUp" href="/sign_up">Sign Up</a>
+      {% endif %}
     </div>
   </div>
 </nav>
