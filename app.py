@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, Response, flash,session
 from flask_login import login_user, login_required, logout_user, current_user
+from flask_session import Session
 import mysql.connector
 import cv2
 from PIL import Image
@@ -12,7 +13,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
  
 app = Flask(__name__)
 
-app.secret_key = 'webweb'
+app.secret_key = 'Webweb123@'
 
 mydb = mysql.connector.connect(
     host="localhost",
@@ -33,7 +34,7 @@ def generate_dataset(nbr):
         # scaling factor=1.3
         # Minimum neighbor = 5
  
-        if faces is ():
+        if faces == ():
             return None
         for (x, y, w, h) in faces:
             cropped_face = img[y:y + h, x:x + w]
@@ -77,7 +78,7 @@ def generate_dataset(nbr):
 # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< Train Classifier >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 @app.route('/train_classifier/<nbr>')
 def train_classifier(nbr):
-    dataset_dir = "C:/Users/Bek Zi Ying/Desktop/faceRecognition_files/faceRecognition_files/dataset"
+    dataset_dir = (r'C:\Users\Bek Zi Ying\Desktop\webimperators\webimperators\dataset')
  
     path = [os.path.join(dataset_dir, f) for f in os.listdir(dataset_dir)]
     faces = []
@@ -97,7 +98,7 @@ def train_classifier(nbr):
     clf.train(faces, ids)
     clf.write("classifier.xml")
  
-    return redirect('/')
+    return redirect('/welcome')
  
  
 # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< Face Recognition >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -202,10 +203,14 @@ def face_recognition():  # generate frame by frame from camera
  
 @app.route('/')
 def home():
-    mycursor.execute("select prs_nbr, prs_name, prs_active, prs_added from prs_mstr")
-    data = mycursor.fetchall()
- 
-    return render_template('index.html', data=data)
+    # mycursor.execute("select prs_nbr, prs_name, prs_active, prs_added from prs_mstr")
+    # data = mycursor.fetchall()
+    if 'loggedin' in session:
+        # User is loggedin show them the home page
+        return render_template('welcome.html', username=session['username'])
+    # User is not loggedin redirect to login page
+    # return redirect(url_for('login'))
+    return render_template('index.html')
 
 @app.route('/sign_up',methods=['GET', 'POST'])
 def signup():
@@ -241,6 +246,7 @@ def signup():
             #     password1, method='sha256'))
             # db.session.add(new_user)
             # db.session.commit()
+            # password1 = generate_password_hash(password1, method='sha256')
             newuser = mycursor.execute('INSERT INTO user VALUES (NULL, %s, %s, %s)', (email, password1, username ))
             # password1 = generate_password_hash(password1)
             # login_user(new_user, True)
@@ -275,26 +281,29 @@ def addprsn_submit():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        email = request.form.get('email')
+        username = request.form.get('username')
         password = request.form.get('password')
+        
 
         # user = User.query.filter_by(email=email).first()
-        mycursor.execute('SELECT * FROM user WHERE email = %s AND password = %s', (email, password))
+        mycursor.execute('SELECT * FROM user WHERE password = %s AND username = %s', (password, username))
         user = mycursor.fetchone()
+        
         if user:
             # if check_password_hash(user.password, password):
-            # session['logged_in'] = True
-            # session['userid'] = user['userid']
-            # session['name'] = user['name']
-            # session['email'] = user['email']
-            # flash('Logged in successfully!', category='success')
+            session['loggedin'] = True
+            session['userid'] = user[0]
+            session['username'] = user[3]
+            # session['email'] = email
+            # user['username'] = session['username']
+            flash('Logged in successfully!', category='success')
                 # login_user(user, True)
             return redirect(url_for('fr_page'))
             # else:
-            #     flash('Incorrect password, try again.', category='error')
-        # else:
-        #     # flash('Email does not exist.', category='error')
-        #     flash('Incorrect password, try again.', category='error')
+                # flash('Incorrect password, try again.', category='error')
+        else:
+            # flash('Email does not exist.', category='error')
+            flash('Incorrect password, try again.', category='error')
 
     return render_template("login.html")
 
@@ -327,9 +336,13 @@ def loginFailed():
 
 @app.route('/logout')
 def logout():
-	session.clear()
-	flash('You are now logged out','success')
-	return redirect(url_for('login'))
+    session.pop('loggedin', None)
+    session.pop('id', None)
+    session.pop('username', None)
+    flash('You are now logged out','success')
+    
+    return redirect(url_for('login'))
 
 if __name__ == "__main__":
+
     app.run(host='127.0.0.1', port=5000, debug=True)
