@@ -281,12 +281,12 @@ def addprsn_submit():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        username = request.form.get('username')
+        email = request.form.get('email')
         password = request.form.get('password')
         
 
         # user = User.query.filter_by(email=email).first()
-        mycursor.execute('SELECT * FROM user WHERE password = %s AND username = %s', (password, username))
+        mycursor.execute('SELECT * FROM user WHERE email = %s AND password = %s', (email, password))
         user = mycursor.fetchone()
         
         if user:
