@@ -6,11 +6,13 @@
 <body>
 
 {% include "navbar.html" %}
-
-<h1> Attention: Login unsuccessfully </h1>
+<div class="alert alert-danger">
+    <strong>Alert!</strong>  <a  class="alert-link">Unauthorised Personnel.</a>.
+  </div>
 
 <div class="row">
     <div class="col-md-7 offset-lg-2">
+        <h2> Attention: Login unsuccessfully </h2>
         <p> Please check again</p>
         <a class="btn btn-danger btn-lg" href="{{ url_for('home') }}"> Back </a>
     </div>
