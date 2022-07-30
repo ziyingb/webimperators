@@ -303,7 +303,7 @@ def login():
                 # flash('Incorrect password, try again.', category='error')
         else:
             # flash('Email does not exist.', category='error')
-            flash('Incorrect password, try again.', category='error')
+            flash('Incorrect password or email, please try again.', category='error')
 
     return render_template("login.html")
 
