@@ -120,7 +120,7 @@ def face_recognition():  # generate frame by frame from camera
             s = mycursor.fetchone()
             s = '' + ''.join(s)
             
-            if draw_boundary.confidence > 70 :
+            if draw_boundary.confidence > 75 :
                 cv2.putText(img, s, (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.8, color, 1, cv2.LINE_AA)
 
             else:
@@ -155,7 +155,7 @@ def face_recognition():  # generate frame by frame from camera
         frame = cv2.imencode('.jpg', img)[1].tobytes()
         yield (b'--frame\r\n'b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
         
-        if draw_boundary.confidence > 70 :
+        if draw_boundary.confidence > 75 :
         
             layout = [[sg.Text("Access Granted")], [sg.Button("OK")]]
 
