@@ -1,6 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, Response, flash,session
 from flask_login import login_user, login_required, logout_user, current_user
-from flask_session import Session
 import mysql.connector
 import cv2
 from PIL import Image
@@ -8,8 +7,8 @@ import numpy as np
 import os
 import PySimpleGUI as sg
 import re
-from werkzeug.security import generate_password_hash, check_password_hash
-
+# from werkzeug.security import generate_password_hash, check_password_hash
+import pyotp
  
 app = Flask(__name__)
 
@@ -19,11 +18,11 @@ mydb = mysql.connector.connect(
     host="localhost",
     user="root",
     passwd="toor",
-    database="webimperators"
+    database="webimperators1"
 )
 mycursor = mydb.cursor()
  
- 
+secret = None 
 # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< Generate dataset >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def generate_dataset(nbr):
     face_classifier = cv2.CascadeClassifier("haarcascade_frontalface_default.xml")
@@ -219,9 +218,8 @@ def signup():
         username = request.form.get('username')
         password1 = request.form.get('password1')
         password2 = request.form.get('password2')
-        
+        secret = pyotp.random_base32()
         #validate registration form
-        #user = User.query.filter_by(email=email).first()
         mycursor.execute('SELECT * FROM user WHERE email = %s', (email, ))
         user = mycursor.fetchone()
         if user:
@@ -247,12 +245,13 @@ def signup():
             # db.session.add(new_user)
             # db.session.commit()
             # password1 = generate_password_hash(password1, method='sha256')
-            newuser = mycursor.execute('INSERT INTO user VALUES (NULL, %s, %s, %s)', (email, password1, username ))
+            newuser = mycursor.execute('INSERT INTO user VALUES (NULL, %s, %s, %s,%s)', (email, password1, username,secret))
             # password1 = generate_password_hash(password1)
             # login_user(new_user, True)
             mydb.commit()
             flash('Account created!', category='success')
-            return redirect(url_for('addprsn'))
+            # return redirect(url_for('addprsn'))
+            return redirect(url_for('signup_2fa'))
 
     return render_template("sign_up.html", user=current_user)
 
@@ -298,7 +297,8 @@ def login():
             # user['username'] = session['username']
             flash('Logged in successfully!', category='success')
                 # login_user(user, True)
-            return redirect(url_for('fr_page'))
+            # return redirect(url_for('fr_page'))
+            return redirect(url_for('login_2fa'))
             # else:
                 # flash('Incorrect password, try again.', category='error')
         else:
@@ -325,6 +325,66 @@ def video_feed():
 def fr_page():
     return render_template('fr_page.html')
 
+# 2FA registration route
+@app.route('/signup2fa')
+def signup_2fa():
+        # generating random secret key for authentication
+    global secret
+
+    if secret is None:
+        secret = pyotp.random_base32()
+    return render_template("signup_2fa.html", secret=secret)
+
+# 2FA form route
+@app.route('/signup2fa', methods=["POST"])
+def signup_2fa_form():
+    # getting secret key used by user
+    secret = request.form.get("secret")
+    # getting OTP provided by user
+    otp = int(request.form.get("otp"))
+
+    # verifying submitted OTP with PyOTP
+    if pyotp.TOTP(secret).verify(otp):
+        # inform users if OTP is valid
+        ####### CAN ADD TO DATABASE USER HERE
+        # mycursor.execute('UPDATE user SET secret = %s WHERE username =%s ', (secret,))
+        # otpuser = mycursor.fetchone()
+        # if otpuser:
+        #     session['secret'] = otpuser[4]
+        #     flash("The TOTP 2FA token is valid", "success")
+        ####### redirect to successful sign up page
+        return redirect(url_for('addprsn'))
+    else:
+        # inform users if OTP is invalid
+        flash("You have supplied an invalid 2FA token!", "error")
+        return redirect(url_for('signup_2fa'))
+
+# 2FA page route
+@app.route('/login2fa')
+def login_2fa():
+    # mycursor.execute("SELECT ", (username, ))
+    # user = mycursor.fetchone()
+    return render_template("login_2fa.html", secret=secret)
+
+@app.route('/login2fa', methods=["POST"])
+def login_2fa_form():
+    # getting secret key used by user
+    secret = request.form.get("secret")
+    # getting OTP provided by user
+    otp = int(request.form.get("otp"))
+
+    # verifying submitted OTP with PyOTP
+    if pyotp.TOTP(secret).verify(otp):
+        # inform users if OTP is valid
+        flash("The TOTP 2FA token is valid", "success")
+        ######## Return here need change to homepage
+        # return redirect(url_for("login_2fa"))
+        return redirect(url_for("fr_page"))
+    else:
+        # inform users if OTP is invalid
+        ######## stay at the same login_2fa page
+        flash("You have supplied an invalid 2FA token!", "error")
+        return redirect(url_for("login_2fa"))
 
 @app.route('/welcome')
 def welcome():
