@@ -9,22 +9,24 @@
 <div class="alert alert-success">
     <strong>Alert!</strong>  <a  class="alert-link">Please look at the web camera for Facial registration.</a>.
   </div>
+  
 <section class="py-1">
     <div class="row mt-5">
         <div class="col-md-3 offset-lg-2">
-            <h3>Please open your camera.</h3>
-            <h3>Detecting Face {{ prs }}</h3>
+            <h3>Facial Registration {{ prs }}</h3>
             <hr>
             <img src="{{ url_for('vidfeed_dataset', nbr=prs) }}" width="100%" class="img-thumbnail">
         </div>
     </div>
-
+    
     <br>
-    <div class="row">
+    <div class="row" action = "/gendataset">
         <div class="col-md-3 offset-lg-2">
-            <a class="btn btn-warning btn-lg" href="{{ url_for('train_classifier', nbr=prs) }}"> Next </a>
+        <!--    <a class="btn btn-warning btn-lg " href="{{ url_for('train_classifier', nbr=prs) }}"> Load Image </a>-->
+            <meta http-equiv = "refresh" content = "3; {{url_for('train_classifier', nbr=prs) }}" />
         </div>
     </div>
+
 </section>
 
 </body>
