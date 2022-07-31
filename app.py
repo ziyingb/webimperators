@@ -7,7 +7,7 @@ import numpy as np
 import os
 import PySimpleGUI as sg
 import re
-# from werkzeug.security import generate_password_hash, check_password_hash
+#from werkzeug.security import generate_password_hash, check_password_hash
 import pyotp
  
 app = Flask(__name__)
@@ -56,7 +56,7 @@ def generate_dataset(nbr):
             img_id += 1
             face = cv2.resize(face_cropped(img), (200, 200))
             face = cv2.cvtColor(face, cv2.COLOR_BGR2GRAY)
- 
+            #save image as jpg
             file_name_path = "dataset/"+nbr+"."+ str(img_id) + ".jpg"
             cv2.imwrite(file_name_path, face)
             cv2.putText(face, str(count_img), (50, 50), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 255, 0), 2)
@@ -96,8 +96,9 @@ def train_classifier(nbr):
     clf = cv2.face.LBPHFaceRecognizer_create()
     clf.train(faces, ids)
     clf.write("classifier.xml")
- 
-    return redirect('/welcome')
+    
+    flash("Face registered", "success")
+    return redirect('/login')
  
  
 # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< Face Recognition >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -151,16 +152,17 @@ def face_recognition():  # generate frame by frame from camera
         img = recognize(img, clf, faceCascade)
 
         #print(img)
-        #sampleNum +=1
+        sampleNum +=1
         frame = cv2.imencode('.jpg', img)[1].tobytes()
         yield (b'--frame\r\n'b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
         
+        #compare facial recognition with database
         if draw_boundary.confidence > 75 :
-        
+            #access granted if facial recognition detect 75% with database
             layout = [[sg.Text("Access Granted")], [sg.Button("OK")]]
 
             #Create the window
-            window = sg.Window("Login", layout)
+            window = sg.Window("Access", layout)
 
             #Create an event loop
             while True:
@@ -171,13 +173,13 @@ def face_recognition():  # generate frame by frame from camera
                     break
             window.close()
             cap.release()
-            render_template("welcome.html")
+           
         else:
-            
+             #access denied if facial recognition does not detect 75% with database
             layout = [[sg.Text("Access Denied")], [sg.Button("OK")]]
 
             # Create the window
-            window = sg.Window("Login", layout)
+            window = sg.Window("Access", layout)
 
             # Create an event loop
             while True:
@@ -190,16 +192,16 @@ def face_recognition():  # generate frame by frame from camera
             window.close()
             cap.release()
             
-            render_template("loginFailed.html")
+            
             
         key = cv2.waitKey(1)
-        if key == 27:       
+        if key == 27 or sampleNum > 10:       
             break
         break
     cap.release()
     cv2.destroyAllWindows()
             
- 
+# <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< Routes >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 @app.route('/')
 def home():
     # mycursor.execute("select prs_nbr, prs_name, prs_active, prs_added from prs_mstr")
@@ -211,6 +213,7 @@ def home():
     # return redirect(url_for('login'))
     return render_template('index.html')
 
+#route for email and password authentication
 @app.route('/sign_up',methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
@@ -218,10 +221,13 @@ def signup():
         username = request.form.get('username')
         password1 = request.form.get('password1')
         password2 = request.form.get('password2')
+        #reset secret token for different user
         secret = pyotp.random_base32()
-        #validate registration form
+        
         mycursor.execute('SELECT * FROM user WHERE email = %s', (email, ))
         user = mycursor.fetchone()
+
+        #validate registration form
         if user:
             flash('Email already exists.', category='error')
         elif len(email) < 4:
@@ -230,8 +236,8 @@ def signup():
             flash('First name must be greater than 1 character.', category='error')
         elif password1 != password2:
             flash('Passwords don\'t match.', category='error')
-        elif len(password1) < 8:
-            flash('Password must be at least 8 characters.', category='error')
+        elif len(password1) < 10:
+            flash('Password must be at least 10 characters.', category='error')
         elif re.search('[0-9]',password1) is None:
             flash("Make sure your password has a number in it")
         elif re.search('[A-Z]',password1) is None: 
@@ -240,27 +246,24 @@ def signup():
             flash("Make sure your password has a special character in it")
         #if all above correct, add new user to db
         else:
-            # new_user = User(email=email, first_name=first_name, password=generate_password_hash(
-            #     password1, method='sha256'))
-            # db.session.add(new_user)
-            # db.session.commit()
-            # password1 = generate_password_hash(password1, method='sha256')
-            newuser = mycursor.execute('INSERT INTO user VALUES (NULL, %s, %s, %s,%s)', (email, password1, username,secret))
             # password1 = generate_password_hash(password1)
-            # login_user(new_user, True)
+            mycursor.execute('INSERT INTO user VALUES (NULL, %s, %s, %s,%s)', (email, password1, username,secret))
+            # password1 = generate_password_hash(password1)
+            
             mydb.commit()
             flash('Account created!', category='success')
-            # return redirect(url_for('addprsn'))
+            # redirect to signup2fa page
             return redirect(url_for('signup_2fa'))
 
     return render_template("sign_up.html", user=current_user)
 
+#route for adding facial recognition
 @app.route('/addprsn')
 def addprsn():
     mycursor.execute("select ifnull(max(prs_nbr) + 1, 101) from prs_mstr")
     row = mycursor.fetchone()
     nbr = row[0]
-    # print(int(nbr))
+   
  
     return render_template('addprsn.html', newnbr=int(nbr))
  
@@ -268,8 +271,7 @@ def addprsn():
 def addprsn_submit():
     prsnbr = request.form.get('txtnbr')
     prsname = request.form.get('txtname')
-    prsskill = request.form.get('optskill')
- 
+    
     mycursor.execute("""INSERT INTO `prs_mstr` (`prs_nbr`, `prs_name`) VALUES
                     ('{}', '{}')""".format(prsnbr, prsname))
     mydb.commit()
@@ -277,45 +279,49 @@ def addprsn_submit():
     # return redirect(url_for('home'))
     return redirect(url_for('vfdataset_page', prs=prsnbr))
 
+#route for login page with password authentication
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
-        
 
-        # user = User.query.filter_by(email=email).first()
+        # password = generate_password_hash(password, method='sha256')
+        # check email and password with database
         mycursor.execute('SELECT * FROM user WHERE email = %s AND password = %s', (email, password))
         user = mycursor.fetchone()
-        
+        # for row in user:
+        #     hashed_password = ("%s" % (row["password"]))
+        #     userid = ("%s" % (row["user_id"]))
         if user:
-            # if check_password_hash(user.password, password):
+            # check_password_hash(user[2],password):
             session['loggedin'] = True
             session['userid'] = user[0]
+            # session['email'] = user[1]
             session['username'] = user[3]
-            # session['email'] = email
-            # user['username'] = session['username']
+
             flash('Logged in successfully!', category='success')
-                # login_user(user, True)
-            # return redirect(url_for('fr_page'))
+            # login_user(user, remember=True) 
             return redirect(url_for('login_2fa'))
             # else:
-                # flash('Incorrect password, try again.', category='error')
+            #     flash('Incorrect password, try again.', category='error')
         else:
             # flash('Email does not exist.', category='error')
-            flash('Incorrect password or email, please try again.', category='error')
+            flash('Incorrect password or email, try again.', category='error')
 
     return render_template("login.html")
 
 @app.route('/vfdataset_page/<prs>')
 def vfdataset_page(prs):
     return render_template('gendataset.html', prs=prs)
- 
+
+#route to video stream at facial recognition registration 
 @app.route('/vidfeed_dataset/<nbr>')
 def vidfeed_dataset(nbr):
     #Video streaming route. Put this in the src attribute of an img tag
     return Response(generate_dataset(nbr), mimetype='multipart/x-mixed-replace; boundary=frame')
- 
+
+#route to video stream at facial recognition login 
 @app.route('/video_feed')
 def video_feed():
     # Video streaming route. Put this in the src attribute of an img tag
@@ -328,14 +334,14 @@ def fr_page():
 # 2FA registration route
 @app.route('/signup2fa')
 def signup_2fa():
-        # generating random secret key for authentication
+    # generating random secret key for authentication
     global secret
 
     if secret is None:
         secret = pyotp.random_base32()
     return render_template("signup_2fa.html", secret=secret)
 
-# 2FA form route
+#route for google authenticator registration
 @app.route('/signup2fa', methods=["POST"])
 def signup_2fa_form():
     # getting secret key used by user
@@ -346,13 +352,8 @@ def signup_2fa_form():
     # verifying submitted OTP with PyOTP
     if pyotp.TOTP(secret).verify(otp):
         # inform users if OTP is valid
-        ####### CAN ADD TO DATABASE USER HERE
-        # mycursor.execute('UPDATE user SET secret = %s WHERE username =%s ', (secret,))
-        # otpuser = mycursor.fetchone()
-        # if otpuser:
-        #     session['secret'] = otpuser[4]
-        #     flash("The TOTP 2FA token is valid", "success")
-        ####### redirect to successful sign up page
+        flash("The TOTP 2FA token is valid", "success")
+        ####### redirect to facial recognition page
         return redirect(url_for('addprsn'))
     else:
         # inform users if OTP is invalid
@@ -362,10 +363,9 @@ def signup_2fa_form():
 # 2FA page route
 @app.route('/login2fa')
 def login_2fa():
-    # mycursor.execute("SELECT ", (username, ))
-    # user = mycursor.fetchone()
     return render_template("login_2fa.html", secret=secret)
 
+#route for google authenticator login
 @app.route('/login2fa', methods=["POST"])
 def login_2fa_form():
     # getting secret key used by user
@@ -377,23 +377,25 @@ def login_2fa_form():
     if pyotp.TOTP(secret).verify(otp):
         # inform users if OTP is valid
         flash("The TOTP 2FA token is valid", "success")
-        ######## Return here need change to homepage
-        # return redirect(url_for("login_2fa"))
+        # redirect to facial recognition page is success
         return redirect(url_for("fr_page"))
     else:
         # inform users if OTP is invalid
-        ######## stay at the same login_2fa page
+        # stay at the same login_2fa page
         flash("You have supplied an invalid 2FA token!", "error")
         return redirect(url_for("login_2fa"))
 
+#route for success login
 @app.route('/welcome')
 def welcome():
     return render_template('welcome.html')
 
+#route for failed login
 @app.route('/loginFailed')
 def loginFailed():
     return render_template('loginFailed.html')
 
+#route for logout
 @app.route('/logout')
 def logout():
     session.pop('loggedin', None)
@@ -404,5 +406,5 @@ def logout():
     return redirect(url_for('login'))
 
 if __name__ == "__main__":
-
+    #run web browser with host and port
     app.run(host='127.0.0.1', port=5000, debug=True)
