@@ -12,15 +12,15 @@
 <section class="py-1">
     <div class="row mt-5">
         <div class="col-md-7 offset-lg-2">
-            <h2>Detecting Face</h2>
-            <h3>Please Open Your Camera</h3>
             <img src="{{ url_for('video_feed') }}" width="100%" class="img-thumbnail">
         </div>
     </div>
     <br>
+
     <div class="row">
-        <div class="col-md-7 offset-lg-2 text-right">
-            <a class="btn btn-success btn-lg" href="{{ url_for('welcome') }}"> Next </a>
+        <div class="col-md-7 offset-lg-2">
+       <!--     <a class="btn btn-success btn-lg" href="{{ url_for('welcome') }}"> Next </a>-->
+            <meta http-equiv = "refresh" content = "3; {{url_for('welcome') }}" />
         </div>
     </div>
 
