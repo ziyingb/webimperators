@@ -1,7 +1,14 @@
-# webimperators
+# Webimperators
+Simple Three Factor Authentication using HTML, Python Flask and MySQL Database.
 
-pip install -r requirements.txt
+Read User Manual to follow the steps to set up.
 
-change dir path in app.py(line 80)
-
-Run python app.py
+#Libraries
+flask
+flask-login
+openCV-contrib-python
+numpy
+Pillow
+pytest-shutil
+python-csv
+mysql-connector-python
