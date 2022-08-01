@@ -4,13 +4,13 @@ Simple Three Factor Authentication using HTML, Python Flask and MySQL Database.
 Read User Manual to follow the steps to set up.
 
 ## Libraries needed
--flask
--flask-login
--openCV-contrib-python
--numpy
--Pillow
--pytest-shutil
--python-csv
--mysql-connector-python
+-flask<br />
+-flask-login<br />
+-openCV-contrib-python<br />
+-numpy<br />
+-Pillow<br />
+-pytest-shutil<br />
+-python-csv<br />
+-mysql-connector-python<br />
 -pyotp
 
