@@ -1,4 +1,3 @@
-libraries to install: 
 flask
 flask-login
 openCV-contrib-python
